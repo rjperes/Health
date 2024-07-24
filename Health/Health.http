@@ -4,3 +4,7 @@ GET {{Health_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET {{Health_HostAddress}}/Health
+Accept: application/json
+###
