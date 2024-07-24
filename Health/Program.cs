@@ -33,7 +33,7 @@ namespace Health
                         {
                             if (eventPayload.TryGetValue("Mean", out var cpuUsage) && cpuUsage is double)
                             {
-                                _cpuUsage = (double) cpuUsage;
+                                _cpuUsage = (double)cpuUsage;
                                 _event.Set();
                             }
                         }
@@ -73,10 +73,10 @@ namespace Health
 
             if (reply.Status == IPStatus.Success)
             {
-                return HealthCheckResult.Healthy("The IP address is reachable");
+                return HealthCheckResult.Healthy("The IP address is reachable.");
             }
 
-            return HealthCheckResult.Unhealthy("The IP address is unreachable");
+            return HealthCheckResult.Unhealthy("The IP address is unreachable.");
         }
     }
 
@@ -103,10 +103,10 @@ namespace Health
 
             if (response.StatusCode < HttpStatusCode.BadRequest)
             {
-                return HealthCheckResult.Healthy("The URL is up and running");
+                return HealthCheckResult.Healthy("The URL is up and running.");
             }
 
-            return HealthCheckResult.Unhealthy("The URL is inaccessible");
+            return HealthCheckResult.Unhealthy("The URL is inaccessible.");
         }
     }
 
@@ -131,10 +131,36 @@ namespace Health
 
             if (cpuUsage >= CpuUsageLimit)
             {
-                return Task.FromResult(HealthCheckResult.Unhealthy("High CPU usage"));
+                return Task.FromResult(HealthCheckResult.Unhealthy("High CPU usage."));
             }
 
-            return Task.FromResult(HealthCheckResult.Healthy("CPU usage is normal"));
+            return Task.FromResult(HealthCheckResult.Healthy("CPU usage is normal."));
+        }
+    }
+
+    class PeriodicHealthCheckPublisher : IHealthCheckPublisher
+    {
+        public Task PublishAsync(HealthReport report, CancellationToken cancellationToken)
+        {
+            var result = JsonSerializer.Serialize(new
+            {
+                report.Entries.Count,
+                Unhealthy = report.Entries.Count(x => x.Value.Status == HealthStatus.Unhealthy),
+                Degraded = report.Entries.Count(x => x.Value.Status == HealthStatus.Degraded),
+                Status = report.Status.ToString(),
+                report.TotalDuration,
+                Checks = report.Entries.Select(e => new
+                {
+                    Check = e.Key,
+                    e.Value.Description,
+                    e.Value.Duration,
+                    Status = e.Value.Status.ToString()
+                })
+            });
+
+            Console.WriteLine(result);
+
+            return Task.CompletedTask;
         }
     }
 
@@ -151,10 +177,18 @@ namespace Health
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHealthChecks()
+                //.Add(new HealthCheckRegistration { })
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
                 .AddCheck("Ping Check", new PingHealthCheck("8.8.8.8"))
                 .AddCheck("Sample Lambda", () => HealthCheckResult.Healthy("All is well"))
                 .AddCheck("CPU Usage Check", new CpuUsageHealthCheck());
+
+            builder.Services.Configure<HealthCheckPublisherOptions>(options =>
+            {
+                options.Delay = TimeSpan.FromSeconds(10);
+            });
+
+            builder.Services.AddSingleton<IHealthCheckPublisher, PeriodicHealthCheckPublisher>();
 
             var app = builder.Build();
 
@@ -165,7 +199,7 @@ namespace Health
                 app.UseSwaggerUI();
             }
 
-            app.UseHealthChecks("/Health", new HealthCheckOptions
+            app.MapHealthChecks("/Health", new HealthCheckOptions
             {
                 AllowCachingResponses = false,
                 ResponseWriter = async (context, report) =>
@@ -189,7 +223,7 @@ namespace Health
                     context.Response.ContentType = MediaTypeNames.Application.Json;
                     await context.Response.WriteAsync(result);
                 }
-            });
+            }).RequireHost("localhost");
 
             app.UseHttpsRedirection();
             app.UseAuthorization();
