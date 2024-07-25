@@ -198,7 +198,8 @@ namespace Health
                 //.Add(new HealthCheckRegistration { })
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
                 .AddCheck("Ping Check", new PingHealthCheck("8.8.8.8"))
-                .AddCheck("Sample Lambda", () => HealthCheckResult.Healthy("All is well"))
+                .AddCheck("Sample Check", () => HealthCheckResult.Healthy("All is well"))
+                .AddAsyncCheck("Sample Async Check", async () => await Task.FromResult(HealthCheckResult.Healthy("All is well")))
                 .AddCheck("CPU Usage Check", new CpuUsageHealthCheck());
 
             builder.Services.Configure<HealthCheckPublisherOptions>(options =>
