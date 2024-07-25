@@ -8,48 +8,6 @@ using System.Text.Json;
 
 namespace Health
 {
-    class CpuUsageEventListener : EventListener
-    {
-        private readonly ManualResetEvent _event = new ManualResetEvent(false);
-        private double? _cpuUsage;
-
-        protected override void OnEventSourceCreated(EventSource eventSource)
-        {
-            if (eventSource.Name == "System.Runtime")
-            {
-                EnableEvents(eventSource, EventLevel.Informational, EventKeywords.All);
-            }
-        }
-
-        protected override void OnEventWritten(EventWrittenEventArgs eventData)
-        {
-            if (eventData.EventName == "EventCounters")
-            {
-                foreach (var payload in eventData.Payload!)
-                {
-                    if (payload is IDictionary<string, object> eventPayload)
-                    {
-                        if (eventPayload.TryGetValue("Name", out var counterName) && counterName.ToString() == "cpu-usage")
-                        {
-                            if (eventPayload.TryGetValue("Mean", out var cpuUsage) && cpuUsage is double)
-                            {
-                                _cpuUsage = (double)cpuUsage;
-                                _event.Set();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public double? GetCpuUsage()
-        {
-            this.EnableEvents(EventSource.GetSources().Single(x => x.Name == "System.Runtime"), EventLevel.LogAlways);
-            _event.WaitOne();
-            return _cpuUsage;
-        }
-    }
-
     public class PingHealthCheck : IHealthCheck
     {
         public PingHealthCheck(string ipAddress)
@@ -112,6 +70,59 @@ namespace Health
 
     public class CpuUsageHealthCheck : IHealthCheck
     {
+        class CpuUsageEventListener : EventListener
+        {
+            private ManualResetEvent? _event = new ManualResetEvent(false);
+            private double? _cpuUsage;
+
+            protected override void OnEventSourceCreated(EventSource eventSource)
+            {
+                if (eventSource.Name == "System.Runtime")
+                {
+                    EnableEvents(eventSource, EventLevel.Informational, EventKeywords.All);
+                }
+            }
+
+            public override void Dispose()
+            {
+                if (_event != null)
+                {
+                    _event.Dispose();
+                    _event = null;
+                }
+
+                base.Dispose();
+            }
+
+            protected override void OnEventWritten(EventWrittenEventArgs eventData)
+            {
+                if (eventData.EventName == "EventCounters")
+                {
+                    foreach (var payload in eventData.Payload!)
+                    {
+                        if (payload is IDictionary<string, object> eventPayload)
+                        {
+                            if (eventPayload.TryGetValue("Name", out var counterName) && counterName.ToString() == "cpu-usage")
+                            {
+                                if (eventPayload.TryGetValue("Mean", out var cpuUsage) && cpuUsage is double)
+                                {
+                                    _cpuUsage = (double)cpuUsage;
+                                    _event!.Set();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            public double? GetCpuUsage()
+            {
+                this.EnableEvents(EventSource.GetSources().Single(x => x.Name == "System.Runtime"), EventLevel.LogAlways);
+                _event!.WaitOne();
+                return _cpuUsage;
+            }
+        }
+
         public const double DefaultCpuUsageLimit = 0.8;
 
         public CpuUsageHealthCheck(double cpuUsageLimit = DefaultCpuUsageLimit)
