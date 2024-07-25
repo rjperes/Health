@@ -56,7 +56,7 @@ namespace Health
 
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var client = new HttpClient();
+            using var client = new HttpClient();
             var response = await client.GetAsync(this.Url);
 
             if (response.StatusCode < HttpStatusCode.BadRequest)
@@ -147,7 +147,7 @@ namespace Health
             using var listener = new CpuUsageEventListener();
             var cpuUsage = listener.GetCpuUsage();
 
-            if (cpuUsage >= CpuUsageLimit)
+            if (cpuUsage > CpuUsageLimit)
             {
                 return Task.FromResult(HealthCheckResult.Unhealthy("High CPU usage."));
             }
@@ -199,8 +199,10 @@ namespace Health
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
                 .AddCheck("Ping Check", new PingHealthCheck("8.8.8.8"))
                 .AddCheck("Sample Check", () => HealthCheckResult.Healthy("All is well"))
-                .AddAsyncCheck("Sample Async Check", async () => await Task.FromResult(HealthCheckResult.Healthy("All is well")))
+                .AddAsyncCheck("Sample Async Check", async () => await Task.FromResult(HealthCheckResult.Degraded("All is well")))
                 .AddCheck("CPU Usage Check", new CpuUsageHealthCheck());
+
+            builder.Services.AddHealthClient("https://localhost:7268/");
 
             builder.Services.Configure<HealthCheckPublisherOptions>(options =>
             {
