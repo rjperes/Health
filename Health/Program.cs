@@ -222,6 +222,13 @@ namespace Health
 
             app.MapHealthChecks("/Health", new HealthCheckOptions
             {
+                Predicate = check => true,
+                ResultStatusCodes =
+                {
+                    [HealthStatus.Healthy] = StatusCodes.Status200OK,
+                    [HealthStatus.Degraded] = StatusCodes.Status200OK,
+                    [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+                },
                 AllowCachingResponses = false,
                 ResponseWriter = async (context, report) =>
                 {
