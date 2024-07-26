@@ -5,7 +5,7 @@ namespace Health
 {
     public interface IHealthClient
     {
-        Task<HealthStatus> CheckHealth(string url, CancellationToken cancellationToken = default);
+        Task<HealthStatus> CheckHealth(string url = "/Health", CancellationToken cancellationToken = default);
     }
 
     public class HealthClient : IHealthClient
