@@ -20,7 +20,7 @@ namespace Health
         public async Task<HealthStatus> CheckHealth(string url = "/Health", CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            return response.StatusCode == HttpStatusCode.ServiceUnavailable ? HealthStatus.Unhealthy : HealthStatus.Healthy;
+            return response.StatusCode == HttpStatusCode.OK ? HealthStatus.Healthy : HealthStatus.Unhealthy;
         }
     }
 }
