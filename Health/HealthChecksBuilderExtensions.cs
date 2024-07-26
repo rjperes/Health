@@ -1,4 +1,6 @@
-﻿namespace Health
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace Health
 {
     public static class HealthChecksBuilderExtensions
     {
@@ -15,6 +17,16 @@
         public static IHealthChecksBuilder AddCpuUsageLimit(this IHealthChecksBuilder builder, string name, double cpuUsageLimit = CpuUsageHealthCheck.DefaultCpuUsageLimit)
         {
             return builder.AddCheck(name, new CpuUsageHealthCheck(cpuUsageLimit));
+        }
+
+        public static IHealthChecksBuilder AddSqlServer(this IHealthChecksBuilder builder, string name, string connectionString)
+        {
+            return builder.AddCheck(name, new SqlServerHealthCheck(connectionString));
+        }
+
+        public static IHealthChecksBuilder AddDbContext<TContext>(this IHealthChecksBuilder builder, string name, Func<TContext, bool> condition) where TContext : DbContext
+        {
+            return builder.AddTypeActivatedCheck<DbContextHealthCheck<TContext>>(name, condition);
         }
     }
 }

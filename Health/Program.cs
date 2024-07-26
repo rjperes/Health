@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Diagnostics.Tracing;
 using System.Net;
@@ -8,6 +10,75 @@ using System.Text.Json;
 
 namespace Health
 {
+    class TestDbContext : DbContext
+    {
+
+    }
+
+    public class DbContextHealthCheck<TContext> : IHealthCheck where TContext : DbContext
+    {
+        public DbContextHealthCheck(TContext context, Func<TContext, bool> condition)
+        {
+            ArgumentNullException.ThrowIfNull(context, nameof(context));
+            ArgumentNullException.ThrowIfNull(condition, nameof(condition));
+
+            Context = context;
+            Condition = condition;
+        }
+
+        public TContext Context { get; }
+        public Func<TContext, bool> Condition { get; }
+
+        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            try
+            {
+                if (Condition(Context))
+                {
+                    return Task.FromResult(HealthCheckResult.Healthy("Query succeeded."));
+                }
+                else
+                {
+                    return Task.FromResult(HealthCheckResult.Unhealthy("Query failed."));
+                }
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(HealthCheckResult.Unhealthy("Query failed.", ex));
+            }
+        }
+    }
+
+    public class SqlServerHealthCheck : IHealthCheck
+    {
+        public SqlServerHealthCheck(string connectionString)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
+
+            ConnectionString = connectionString;
+        }
+
+        public string ConnectionString { get; }
+
+        public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            try
+            {
+                using var con = new SqlConnection(ConnectionString);
+                using var cmd = con.CreateCommand();
+
+                cmd.CommandText = "SELECT 1";
+                await cmd.ExecuteScalarAsync();
+
+                return HealthCheckResult.Healthy("Connection successful.");
+            }
+            catch (Exception ex)
+            {
+                return HealthCheckResult.Unhealthy("Connection failed.", ex);
+            }
+        }
+    }
+
     public class PingHealthCheck : IHealthCheck
     {
         public PingHealthCheck(string ipAddress)
@@ -190,12 +261,15 @@ namespace Health
 
             // Add services to the container.
 
+            builder.Services.AddDbContext<TestDbContext>();
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHealthChecks()
                 //.Add(new HealthCheckRegistration { })
+                .AddDbContext<TestDbContext>("DbContext Check", ctx => true)
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
                 .AddCheck("Ping Check", new PingHealthCheck("8.8.8.8"))
                 .AddCheck("Sample Check", () => HealthCheckResult.Healthy("All is well"))
