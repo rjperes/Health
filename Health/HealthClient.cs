@@ -5,7 +5,7 @@ namespace Health
 {
     public interface IHealthClient
     {
-        Task<HealthStatus> IsHealthy(string url, CancellationToken cancellationToken = default);
+        Task<HealthStatus> CheckHealth(string url, CancellationToken cancellationToken = default);
     }
 
     public class HealthClient : IHealthClient
@@ -17,7 +17,7 @@ namespace Health
             _httpClient = httpClient;
         }
 
-        public async Task<HealthStatus> IsHealthy(string url = "/Health", CancellationToken cancellationToken = default)
+        public async Task<HealthStatus> CheckHealth(string url = "/Health", CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.GetAsync(url, cancellationToken);
             return response.StatusCode == HttpStatusCode.ServiceUnavailable ? HealthStatus.Unhealthy : HealthStatus.Healthy;
