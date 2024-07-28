@@ -12,7 +12,7 @@ namespace Health
 {
     class TestDbContext : DbContext
     {
-
+        public DbSet<WeatherForecast> WeatherForecasts { get; set; }
     }
 
     public class DbContextHealthCheck<TContext> : IHealthCheck where TContext : DbContext
@@ -263,6 +263,8 @@ namespace Health
 
             builder.Services.AddDbContext<TestDbContext>();
 
+            builder.Configuration.GetConnectionString("");
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -270,6 +272,7 @@ namespace Health
             builder.Services.AddHealthChecks()
                 //.Add(new HealthCheckRegistration { })
                 .AddDbContext<TestDbContext>("DbContext Check", ctx => true)
+                .AddTypeActivatedCheck<DbContextHealthCheck<TestDbContext>>("Blogs Check", (TestDbContext ctx) => ctx.WeatherForecasts.Any())   
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
                 .AddCheck("Ping Check", new PingHealthCheck("8.8.8.8"))
                 .AddCheck("Sample Check", () => HealthCheckResult.Healthy("All is well"))
@@ -296,7 +299,7 @@ namespace Health
 
             app.MapHealthChecks("/Health", new HealthCheckOptions
             {
-                Predicate = check => true,
+                Predicate = check => check.Tags.Contains("db"),
                 ResultStatusCodes =
                 {
                     [HealthStatus.Healthy] = StatusCodes.Status200OK,
