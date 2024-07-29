@@ -1,16 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
 
-namespace Health.Controllers
+namespace Health
 {
-    public class HealthController : Controller
+    class PeriodicHealthCheckPublisher : IHealthCheckPublisher
     {
-        [HttpGet("[action]")]
-        public async Task<IActionResult> CheckHealth([FromServices] HealthCheckService healthService, CancellationToken cancellationToken)
+        public Task PublishAsync(HealthReport report, CancellationToken cancellationToken)
         {
-            var report = await healthService.CheckHealthAsync(registrations => registrations.Tags.Contains("tcp"), cancellationToken);
-
-            var result = new
+            var result = JsonSerializer.Serialize(new
             {
                 report.Entries.Count,
                 Unhealthy = report.Entries.Count(x => x.Value.Status == HealthStatus.Unhealthy),
@@ -24,10 +21,11 @@ namespace Health.Controllers
                     e.Value.Duration,
                     Status = e.Value.Status.ToString()
                 })
-            };
+            });
 
+            Console.WriteLine(result);
 
-            return Json(result);
+            return Task.CompletedTask;
         }
     }
 }
