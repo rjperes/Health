@@ -28,6 +28,7 @@ namespace Health
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHealthChecks()
+                .AddManualHealthCheck()
                 .Add(new HealthCheckRegistration("Ping Check", new PingHealthCheck("8.8.8.8"), HealthStatus.Unhealthy, Array.Empty<string>()) { Delay = TimeSpan.FromMinutes(1), Period = TimeSpan.FromMinutes(5) })
                 .AddDbContext<TestDbContext>("DbContext Check", ctx => true)
                 .AddTypeActivatedCheck<DbContextHealthCheck<TestDbContext>>("Blogs Check", (TestDbContext ctx) => ctx.WeatherForecasts.Any())   

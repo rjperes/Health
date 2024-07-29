@@ -29,5 +29,20 @@ namespace Health.Controllers
 
             return Json(result);
         }
+
+        [HttpGet("[action]/{healthy?}")]
+        public IActionResult Manual([FromServices] IManualHealthCheck healthCheck, bool healthy = true)
+        {
+            if (healthy)
+            {
+                healthCheck.ReportHealthy();
+            }
+            else
+            {
+                healthCheck.ReportUnhealthy("Not so good");
+            }
+
+            return Ok();
+        }
     }
 }
