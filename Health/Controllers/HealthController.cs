@@ -8,7 +8,7 @@ namespace Health.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> CheckHealth([FromServices] HealthCheckService healthService, CancellationToken cancellationToken)
         {
-            var report = await healthService.CheckHealthAsync(cancellationToken);
+            var report = await healthService.CheckHealthAsync(registrations => registrations.Tags.Contains("tcp"), cancellationToken);
 
             var result = new
             {
@@ -28,6 +28,21 @@ namespace Health.Controllers
 
 
             return Json(result);
+        }
+
+        [HttpGet("[action]/{healthy?}")]
+        public IActionResult Manual([FromServices] IManualHealthCheck healthCheck, bool healthy = true)
+        {
+            if (healthy)
+            {
+                healthCheck.ReportHealthy();
+            }
+            else
+            {
+                healthCheck.ReportUnhealthy("Not so good");
+            }
+
+            return Ok();
         }
     }
 }
