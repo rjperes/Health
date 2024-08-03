@@ -272,14 +272,14 @@ namespace Health
             builder.Services.AddHealthChecks()
                 //.Add(new HealthCheckRegistration { })
                 .AddDbContext<TestDbContext>("DbContext Check", ctx => true)
-                .AddTypeActivatedCheck<DbContextHealthCheck<TestDbContext>>("Blogs Check", (TestDbContext ctx) => ctx.WeatherForecasts.Any())   
+                .AddTypeActivatedCheck<DbContextHealthCheck<TestDbContext>>("Blogs Check", (TestDbContext ctx) => ctx.WeatherForecasts.Any())
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
                 .AddCheck("Ping Check", new PingHealthCheck("8.8.8.8"))
                 .AddCheck("Sample Check", () => HealthCheckResult.Healthy("All is well"))
                 .AddAsyncCheck("Sample Async Check", async () => await Task.FromResult(HealthCheckResult.Degraded("All is well")))
                 .AddCheck("CPU Usage Check", new CpuUsageHealthCheck());
 
-            builder.Services.AddHealthClient("https://localhost:7268/");
+            builder.Services.AddHealthClient("https://localhost:7268/Health");
 
             builder.Services.Configure<HealthCheckPublisherOptions>(options =>
             {
@@ -325,7 +325,9 @@ namespace Health
                         })
                     });
 
+                    context.Response.Headers["X-Health-Status"] = report.Status.ToString();
                     context.Response.ContentType = MediaTypeNames.Application.Json;
+
                     await context.Response.WriteAsync(result);
                 }
             }).RequireHost("localhost");
