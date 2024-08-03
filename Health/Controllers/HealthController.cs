@@ -44,5 +44,11 @@ namespace Health.Controllers
 
             return Ok();
         }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> Client([FromServices] IHealthClient healthCheck, CancellationToken cancellationToken)
+        {
+            return Json(await healthCheck.CheckHealth(cancellationToken));
+        }
     }
 }

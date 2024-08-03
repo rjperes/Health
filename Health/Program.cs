@@ -29,7 +29,7 @@ namespace Health
             builder.Services.AddSwaggerGen();
             builder.Services.AddHealthChecks()
                 .AddManualHealthCheck()
-                .Add(new HealthCheckRegistration("Ping Check", new PingHealthCheck("8.8.8.8"), HealthStatus.Unhealthy, Array.Empty<string>()) { Delay = TimeSpan.FromMinutes(1), Period = TimeSpan.FromMinutes(5) })
+                //.Add(new HealthCheckRegistration("Ping Check", new PingHealthCheck("8.8.8.8"), HealthStatus.Unhealthy, Array.Empty<string>()) { Delay = TimeSpan.FromMinutes(1), Period = TimeSpan.FromMinutes(5) })
                 .AddDbContext<TestDbContext>("DbContext Check", ctx => true)
                 .AddTypeActivatedCheck<DbContextHealthCheck<TestDbContext>>("Blogs Check", (TestDbContext ctx) => ctx.WeatherForecasts.Any())
                 .AddCheck("Web Check", new WebHealthCheck("https://google.com"))
@@ -37,6 +37,11 @@ namespace Health
                 .AddCheck("Sample Check", () => HealthCheckResult.Healthy("All is well"))
                 .AddAsyncCheck("Sample Async Check", async () => await Task.FromResult(HealthCheckResult.Degraded("All is well")))
                 .AddCheck("CPU Usage Check", new CpuUsageHealthCheck());
+
+            builder.Services.Configure<HealthClientOptions>(options =>
+            {
+
+            });
 
             builder.Services.AddHealthClient("https://localhost:7268/Health");
 

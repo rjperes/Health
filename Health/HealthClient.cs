@@ -23,10 +23,6 @@ namespace Health
         private readonly HttpClient _httpClient;
         private readonly HealthClientOptions _options;
 
-        public HealthClient(HttpClient httpClient) : this(httpClient, null)
-        {
-        }
-
         public HealthClient(HttpClient httpClient, IOptions<HealthClientOptions>? options)
         {
             ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
