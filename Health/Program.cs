@@ -43,7 +43,7 @@ namespace Health
 
             });
 
-            builder.Services.AddHealthClient("https://localhost:7268/Health");
+            builder.Services.AddHealthCheckClient("https://localhost:7268/Health");
 
             builder.Services.Configure<HealthCheckPublisherOptions>(options =>
             {
