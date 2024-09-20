@@ -46,7 +46,7 @@ namespace Health.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> Client([FromServices] IHealthClient healthCheck, CancellationToken cancellationToken)
+        public async Task<IActionResult> Client([FromServices] IHealthCheckClient healthCheck, CancellationToken cancellationToken)
         {
             return Json(await healthCheck.CheckHealth(cancellationToken));
         }
