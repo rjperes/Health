@@ -5,14 +5,14 @@ namespace Health
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHealthClient(this IServiceCollection services, string baseAddress)
+        public static IServiceCollection AddHealthCheckClient(this IServiceCollection services, string baseAddress)
         {
-            services.AddHttpClient("HealthClient", client =>
+            services.AddHttpClient("HealthCheckClient", client =>
             {
                 client.BaseAddress = new Uri(baseAddress);
                 client.DefaultRequestHeaders.Add(HeaderNames.Accept, MediaTypeNames.Application.Json);
                 client.DefaultRequestHeaders.Add(HeaderNames.CacheControl, "no-cache");
-            }).AddTypedClient<IHealthClient, HealthClient>();
+            }).AddTypedClient<IHealthCheckClient, HealthCheckClient>();
 
             return services;
         }
