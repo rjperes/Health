@@ -3,12 +3,12 @@ using Microsoft.Extensions.Options;
 
 namespace Health
 {
-    public interface IHealthClient
+    public interface IHealthCheckClient
     {
         Task<HealthStatus> CheckHealth(CancellationToken cancellationToken = default);
     }
 
-    public class HealthClientOptions
+    public class HealthCheckClientOptions
     {
         public Dictionary<HealthStatus, int> ResultStatusCodes { get; } = new Dictionary<HealthStatus, int>
         {
@@ -18,12 +18,12 @@ namespace Health
         };
     }
 
-    public class HealthClient : IHealthClient
+    public class HealthCheckClient : IHealthCheckClient
     {
         private readonly HttpClient _httpClient;
         private readonly HealthClientOptions _options;
 
-        public HealthClient(HttpClient httpClient, IOptions<HealthClientOptions>? options)
+        public HealthCheckClient(HttpClient httpClient, IOptions<HealthCheckClientOptions>? options)
         {
             ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
 
@@ -58,7 +58,7 @@ namespace Health
         }
     }
 
-    public class LocalHealthClient : IHealthClient
+    public class LocalHealthCheckClient : IHealthCheckClient
     {
         private readonly HealthCheckService _healthService;
 
